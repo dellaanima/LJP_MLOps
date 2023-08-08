@@ -4,6 +4,9 @@ import sys
 import argparse
 import logging
 import numpy as np
+import boto3
+import datetime
+from datetime import datetime 
 
 def install(package):
     subprocess.check_call([sys.executable, "-m", "pip", "install", package])
@@ -20,8 +23,7 @@ def parser_args(train_notebook=False):
     parser.add_argument("--validation_dir", type=str, default='/opt/ml/processing/validation')    
     parser.add_argument("--test_dir", type=str, default='/opt/ml/processing/test')
     parser.add_argument("--transformers_version", type=str, default='4.17.0')
-    parser.add_argument("--pytorch_version", type=str, default='1.10.2')    
-
+    parser.add_argument("--pytorch_version", type=str, default='1.10.2')
         
     if train_notebook:
         args = parser.parse_args([])
@@ -34,9 +36,12 @@ if __name__ == "__main__":
     args = parser_args()
     
     install(f"torch=={args.pytorch_version}")
-    install(f"transformers=={args.transformers_version}")
+    transformers_version = "4.17.0" 
+    install(f"transformers=={transformers_version}")
     install("datasets==1.18.4")
     
+    ## Data Crawling 
+
     from datasets import load_dataset
     from transformers import AutoTokenizer, AutoModelForSequenceClassification
 
@@ -48,8 +53,30 @@ if __name__ == "__main__":
         return tokenizer(batch['fact'], padding='max_length', max_length=512, truncation=True)
 
     # load dataset
-    train_dataset, test_dataset = load_dataset(args.dataset_name, split=['train[:1%]', 'train[-1%:]'])
-    
+    train_dataset, test_dataset = load_dataset(args.dataset_name, split=['train[:1500]', 'train[-1500:]'])
+
+    # train dataset to dataframe 
+    import pandas as pd
+    train_df = pd.DataFrame(train_dataset)
+
+    # local file Path
+    local_file_path = "/opt/ml/processing/collected_data.csv"  
+
+    # Download collected Data from S3 bucket
+    s3 = boto3.client("s3")
+    s3_bucket = "sagemaker-us-east-1-353411055907"
+    current_date_str = f"data_{datetime.now().strftime('%Y-%m-%d %H')}"
+    file_name = f'GP-LJP-mlops/data/collected_data/{current_date_str}.csv'
+    s3.download_file(s3_bucket, file_name, local_file_path)
+
+    # Concatenate the original data + collected data 
+    added_df = pd.read_csv(local_file_path, encoding='utf-8')
+    merged_df = pd.concat([train_df, added_df], axis=0)
+
+    # Convert the merged DataFrame back to the Hugging Face Dataset class format
+    from datasets import Dataset
+    train_dataset = Dataset.from_pandas(merged_df)
+
     if args.small_subset_for_debug:
         train_dataset = train_dataset.shuffle().select(range(1000))
         test_dataset = test_dataset.shuffle().select(range(1000))

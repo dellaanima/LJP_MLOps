@@ -25,19 +25,25 @@ def parser_args(train_notebook=False):
     parser.add_argument("--train_batch_size", type=int, default=1)
     parser.add_argument("--eval_batch_size", type=int, default=2)
     parser.add_argument("--warmup_steps", type=int, default=0)
-    parser.add_argument("--learning_rate", type=str, default=5e-5)
+    parser.add_argument("--learning_rate", type=float, default=5e-5)  # Change the type to float
     parser.add_argument("--disable_tqdm", type=bool, default=True)
-    parser.add_argument("--fp16", type=bool, default=True)    
-    parser.add_argument("--tokenizer_id", type=str, default='lawcompany/KLAID_LJP_base')
+    parser.add_argument("--fp16", type=bool, default=True)
+    #parser.add_argument("--tokenizer_id", type=str, default='lawcompany/KLAID_LJP_base')
+    #parser.add_argument("--model_id", type=str, default='lawcompany/KLAID_LJP_base')
+
+
+    # Set the type of model_id, sagemaker_submit_directory, tokenizer_id to str
     parser.add_argument("--model_id", type=str, default='lawcompany/KLAID_LJP_base')
-    
+    parser.add_argument("--sagemaker_submit_directory", type=str, default='s3://sagemaker-us-east-1-353411055907/GP-LJP-mlops/src')
+    parser.add_argument("--tokenizer_id", type=str, default='lawcompany/KLAID_LJP_base')
+
     # SageMaker Container environment
     parser.add_argument("--output_data_dir", type=str, default=os.environ["SM_OUTPUT_DATA_DIR"])
     parser.add_argument("--model_dir", type=str, default=os.environ["SM_MODEL_DIR"])
-    parser.add_argument("--n_gpus", type=str, default=os.environ["SM_NUM_GPUS"])
+    parser.add_argument("--n_gpus", type=int, default=os.environ["SM_NUM_GPUS"])  # Change the type to int
     parser.add_argument("--train_dir", type=str, default=os.environ["SM_CHANNEL_TRAIN"])
     parser.add_argument("--test_dir", type=str, default=os.environ["SM_CHANNEL_TEST"])
-    parser.add_argument('--chkpt_dir', type=str, default='/opt/ml/checkpoints')     
+    parser.add_argument('--chkpt_dir', type=str, default='/opt/ml/checkpoints')
 
     if train_notebook:
         args = parser.parse_args([])
