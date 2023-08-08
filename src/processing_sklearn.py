@@ -53,7 +53,7 @@ if __name__ == "__main__":
         return tokenizer(batch['fact'], padding='max_length', max_length=512, truncation=True)
 
     # load dataset
-    train_dataset, test_dataset = load_dataset(args.dataset_name, split=['train[:1500]', 'train[-1500:]'])
+    train_dataset, test_dataset = load_dataset(args.dataset_name, split=['train[:80%]', 'train[80%:]'])
 
     # train dataset to dataframe 
     import pandas as pd
