@@ -51,7 +51,7 @@ for page in trange(1, totalCnt // 20 + 1):
 
         rows.append({'판례일련번호': 판례일련번호})
 
-    if len(rows) >= 50:
+    if len(rows) >= 1000:
         break
 
 case_list = pd.DataFrame(rows)
@@ -83,7 +83,6 @@ for i in trange(len(case_list)):
     if case_info is not None:
         case_data['판례일련번호'] = case_info.text
 
-    # 불필요한 문자데이터 정리 및 데이터 받아오기
     for content in contents:
         content_element = xtree.find(content)
         if content_element is not None:
@@ -100,8 +99,8 @@ for i in trange(len(case_list)):
     # Append the case data to the results DataFrame
     results = results.append(case_data, ignore_index=True)
 
-#S3에 저장
-s3_bucket = "sagemaker-us-east-1-353411055907"  # S3 버킷 이름으로 바꿔주세요
+#S3 
+s3_bucket = "sagemaker-us-east-1-353411055907"  
 s3_client = boto3.client('s3')
 
 # S3에서 labels.csv 가져오기
@@ -129,7 +128,8 @@ new_df.columns = ['laws_service_id', 'fact', 'laws_service']
 
 
 current_date_str = f"data_{datetime.now().strftime('%Y-%m-%d %H')}"
-#new_df를 CSV로 변환하여 S3에 저장
+
+# S3에 저장
 new_df_csv = new_df.to_csv(index=False)
 file_name = f'GP-LJP-mlops/data/collected_data/{current_date_str}.csv'
 s3_client.put_object(Bucket=s3_bucket, Key=file_name, Body=new_df_csv)
